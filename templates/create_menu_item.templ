@@ -1,0 +1,60 @@
+package templates
+
+import (
+    "pizza/db"
+    "fmt"
+)
+
+templ Add(categories []db.Category) {
+    @Base("Create Pizza") {
+        <div class="min-h-screen w-4/6 py-12 px-4 sm:px-6 lg:px-8">
+            <div class="max-w-ld mx-auto bg-white rounded-xl shadow-lg overflow-hidden p-8">
+                <h1 class="text-3xl font-bold text-center text-gray-900 mb-6">Create New Menu Item</h1>
+                <form action="/admin/menu/add" method="post" class="space-y-6">
+                    <div>
+                        <label for="title" class="block text-sm font-medium text-gray-700">Title</label>
+                        <input type="text" name="title" id="title" placeholder="Enter title" required
+                               class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"/>
+                    </div>
+                    <div>
+                        <label for="description" class="block text-sm font-medium text-gray-700">Description</label>
+                        <textarea name="description" id="description" rows="3" placeholder="Enter description" required
+                                  class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"></textarea>
+                    </div>
+                    <div>
+                        <label for="price" class="block text-sm font-medium text-gray-700">Price</label>
+                        <div class="mt-1 relative rounded-md shadow-sm">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <span class="text-gray-500 sm:text-sm">$</span>
+                            </div>
+                            <input type="number" name="price" id="price" step="0.01" placeholder="0.00" required
+                                   class="block w-full pl-7 pr-12 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"/>
+                        </div>
+                    </div>
+                    <div>
+                        <label for="image" class="block text-sm font-medium text-gray-700">Image URL</label>
+                        <input type="url" name="image" id="image" placeholder="Enter image URL"
+                               class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"/>
+                    </div>
+                    <div>
+                        <label for="category" class="block text-sm font-medium text-gray-700">Category</label>
+                        <select name="category" id="category" required
+                                class="mt-1 block w-full pl-3 pr-10 py-2 text-base border border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 rounded-md">
+                            <option value="" disabled selected>Choose category</option>
+                            for _, category := range categories {
+                                <option value={ fmt.Sprintf("%d", category.ID) }>{ category.Title }</option>
+                            }
+                            <option value="0">No category</option>
+                        </select>
+                    </div>
+                    <div>
+                        <button type="submit"
+                                class="w-4/6 mx-auto flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                            Create
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    }
+}

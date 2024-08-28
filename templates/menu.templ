@@ -1,0 +1,137 @@
+package templates
+
+import (
+    "pizza/db"
+    "fmt"
+)
+
+templ Menu(items []db.MenuItem, categories []db.Category)  {
+    @Base("Our Delicious Menu") {
+        <div class="min-h-screen py-12 px-4 sm:px-6 lg:px-8 bg-gray-100">
+            <div class="max-w-7xl mx-auto">
+                <h1 class="text-4xl font-extrabold text-center text-gray-900 mb-12">Our Menu</h1>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+                    for _, item := range items {
+                        @MenuItem(item, categories)
+                    }
+                </div>
+            </div>
+        </div>
+    }
+}
+
+templ MenuItem(item db.MenuItem, categories []db.Category) {
+    <div class="bg-white rounded-xl shadow-lg overflow-hidden transition-transform duration-300 hover:scale-105 flex flex-col h-full">
+        <div class="aspect-w-16 aspect-h-9 w-full relative">
+            <img src={ item.ImageUrl } alt={ item.Name } class="object-cover w-full h-full"/>
+            <div class="absolute top-0 right-0 bg-red-600 text-white px-3 py-1 rounded-bl-lg font-bold">
+                ${ fmt.Sprintf("%.2f", item.Price) }
+            </div>
+        </div>
+        <div class="p-6 flex flex-col flex-grow">
+            <h2 class="text-2xl font-bold mb-2 text-gray-800">{ item.Name }</h2>
+            if item.Description.Valid {
+                <p class="text-gray-600 mb-4 flex-grow overflow-hidden">{ item.Description.String }</p>
+            } else {
+                <p class="text-gray-600 mb-4 flex-grow overflow-hidden">No description available</p>
+            }
+
+            <div class="mb-4">
+                for _, category := range categories {
+                    if category.ID == item.CategoryID.Int64 {
+                    <span class="text-sm text-gray-500">Category: </span>
+                    <form action={ templ.URL("/category/" + fmt.Sprintf("%d", category.ID)) } method="get" class="inline">
+                        <input type="hidden" name="id" value={ fmt.Sprintf("%d", category.ID) }>
+                        <button type="submit" class="text-sm font-medium text-blue-600 hover:text-blue-800 transition-colors duration-300">
+                            { category.Title }
+                        </button>
+                    </form>
+                    }
+                }
+    if item.CategoryID.Int64 == 0 {
+        <span class="text-sm text-gray-500">Uncategorized</span>
+    }
+</div>
+
+            
+            <div class="flex flex-col space-y-2 mt-auto">
+                <form action="/user/cart/add" method="POST" class="flex items-center">
+                    <input type="hidden" name="item_id" value={ fmt.Sprint(item.ID) }/>
+                    <input type="hidden" name="item_name" value={ fmt.Sprint(item.Name) }/>
+                    <input type="hidden" name="item_price" value={ fmt.Sprintf("%.02f", item.Price) }/>
+                    <input type="number" name="quantity" value="1" min="1" max="30" class="w-16 px-2 py-1 border border-gray-300 rounded-l-full text-center focus:outline-none focus:ring-2 focus:ring-red-500"/>
+                    <button type="submit" class="flex-grow bg-red-800 text-white px-4 py-2 rounded-r-full font-semibold transition-colors duration-300 hover:bg-red-900 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-50">
+                        Add to Cart
+                    </button>
+                </form>
+                if user, ok := ctx.Value("user").(db.User); ok && user.IsAdmin == 1 {
+                    <div class="flex space-x-2 mt-2">
+                        <a href={ templ.URL("/admin/menu/edit/" + fmt.Sprintf("%d", item.ID)) } class="w-1/2 bg-blue-600 text-white px-4 py-2 rounded-full font-semibold transition-colors duration-300 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 text-center">
+                            Edit
+                        </a>
+                        <button type="button" data-item-id={ fmt.Sprint(item.ID) } onclick="confirmDelete(this)" class="w-1/2 bg-gray-600 text-white px-4 py-2 rounded-full font-semibold transition-colors duration-300 hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-opacity-50">
+                                Delete
+                        </button>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+}
+
+templ Update(categories []db.Category, currentCategory db.Category, menuItem db.MenuItem) {
+    @Base("Update Menu Item") {
+        <div class="min-h-screen w-full md:w-4/6 py-12 px-4 sm:px-6 lg:px-8 mx-auto">
+            <div class="bg-white rounded-xl shadow-lg overflow-hidden p-8">
+                <h1 class="text-3xl font-bold text-center text-gray-900 mb-6">Update Menu Item</h1>
+                <form action={ templ.SafeURL(fmt.Sprintf("/admin/menu/edit/%d", menuItem.ID)) } method="POST" class="space-y-6">
+                    <div>
+                        <label for="title" class="block text-sm font-medium text-gray-700">Title</label>
+                        <input type="text" name="title" id="title" value={ menuItem.Name } required
+                               class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"/>
+                    </div>
+                    <div>
+                        <label for="description" class="block text-sm font-medium text-gray-700">Description</label>
+                        <textarea name="description" id="description" rows="3" required
+                                  class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">{ menuItem.Description.String }</textarea>
+                    </div>
+                    <div>
+                        <label for="price" class="block text-sm font-medium text-gray-700">Price</label>
+                        <div class="mt-1 relative rounded-md shadow-sm">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <span class="text-gray-500 sm:text-sm">$</span>
+                            </div>
+                            <input type="number" name="price" id="price" step="0.01" value={ fmt.Sprintf("%.2f", menuItem.Price) } required
+                                   class="block w-full pl-7 pr-12 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"/>
+                        </div>
+                    </div>
+                    <div>
+                        <label for="image" class="block text-sm font-medium text-gray-700">Image URL</label>
+                        <input type="url" name="image" id="image" value={ menuItem.ImageUrl }
+                               class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"/>
+                    </div>
+                    <div>
+                        <label for="category" class="block text-sm font-medium text-gray-700">Category</label>
+                        <select name="category" id="category" required
+                                class="mt-1 block w-full pl-3 pr-10 py-2 text-base border border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 rounded-md">
+                            <option value="0">No Category</option>
+                            for _, category := range categories {
+                                if category.ID == currentCategory.ID {
+                                    <option value={ fmt.Sprintf("%d", category.ID) } selected>{ category.Title }</option>
+                                } else {
+                                    <option value={ fmt.Sprintf("%d", category.ID) }>{ category.Title }</option>
+                                }
+                            }
+                        </select>
+                    </div>
+                    <div>
+                        <button type="submit"
+                                class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                            Update
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    }
+}

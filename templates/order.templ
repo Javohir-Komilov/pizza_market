@@ -1,0 +1,77 @@
+package templates
+
+import (
+    "fmt"
+    "pizza/db"
+)
+
+templ Orders(orders []db.Order) {
+    @Base("Your Orders") {
+        <div class="min-h-screen py-12 px-4 sm:px-6 lg:px-8">
+            <div class="max-w-7xl mx-auto">
+                <h1 class="text-4xl font-extrabold text-center text-gray-900 mb-12">Your Orders</h1>
+                if len(orders) == 0 {
+                    <p class="text-xl text-center text-gray-600">You haven't placed any orders yet.</p>
+                } else {
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                        for _, order := range orders {
+                            @OrderItem(order)
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+    }
+}
+
+templ OrderItem(order db.Order) {
+    <div class="bg-white shadow-lg rounded-lg overflow-hidden">
+        <div class="px-6 py-4 bg-gray-50 border-b border-gray-200 flex justify-between items-center">
+            <h3 class="text-2xl font-semibold text-gray-800">
+                Order #{ fmt.Sprintf("%d", order.ID) }
+            </h3>
+            <span class={ "px-4 py-2 rounded-full text-sm font-semibold",
+                templ.KV("bg-green-200 text-green-800", order.Status == "Completed"),
+                templ.KV("bg-yellow-200 text-yellow-800", order.Status == "Pending"),
+                templ.KV("bg-red-200 text-red-800", order.Status == "Cancelled"),
+            }>
+                { order.Status }
+            </span>
+        </div>
+        <div class="px-6 py-4">
+            <div class="grid grid-cols-2 gap-6">
+                <div>
+                    <p class="text-lg font-medium text-gray-600 font-semibold">Order Date:</p>
+                    <p class="text-xl text-gray-800">
+                        if order.CreatedAt.Valid {   
+                            { order.CreatedAt.Time.Format("Jan 02, 2006 15:04:05") }
+                        } else {
+                            N/A
+                        }
+                    </p>
+                </div>
+                <div>
+                    <p class="text-lg font-medium text-gray-600 font-semibold">Total Price:</p>
+                    <p class="text-2xl font-bold text-gray-800">${ fmt.Sprintf("%.2f", order.TotalPrice) }</p>
+                </div>
+            </div>
+        </div>
+        <div class="px-6 py-4 bg-gray-50 border-t border-gray-200">
+            <div class="flex space-x-4">
+                <button class="flex-1 bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-6 rounded-lg transition duration-300">
+                    View Details
+                </button>
+                if order.Status == "Pending" {
+                    <button class="flex-1 bg-red-500 hover:bg-red-600 text-white font-bold py-3 px-6 rounded-lg transition duration-300">
+                        Cancel Order
+                    </button>
+                }
+                if order.Status == "Completed" {
+                    <button class="flex-1 bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-6 rounded-lg transition duration-300">
+                        Reorder
+                    </button>
+                }
+            </div>
+        </div>
+    </div>
+}

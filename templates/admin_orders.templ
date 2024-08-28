@@ -1,0 +1,82 @@
+package templates
+
+import (
+    "fmt"
+    "pizza/db"
+)
+
+templ AdminOrders(orders []db.Order) {
+    @Base("Admin Orders") {
+        <div class="min-h-screen py-12 px-4 sm:px-6 lg:px-8">
+            <div class="max-w-7xl mx-auto">
+                <h1 class="text-4xl font-extrabold text-center text-gray-900 mb-12">Admin Orders Management</h1>
+                if len(orders) == 0 {
+                    <p class="text-xl text-center text-gray-600">No orders found.</p>
+                } else {
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full bg-white shadow-md rounded-lg overflow-hidden">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Order ID</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total Price</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-200">
+                                for _, order := range orders {
+                                    @AdminOrderRow(order)
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+}
+
+templ AdminOrderRow(order db.Order) {
+    <tr>
+        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{ fmt.Sprintf("%d", order.ID) }</td>
+        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+            if order.CreatedAt.Valid {   
+                { order.CreatedAt.Time.Format("Jan 02, 2006 15:04:05") }
+            } else {
+                N/A
+            }
+        </td>
+        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${ fmt.Sprintf("%.2f", order.TotalPrice) }</td>
+        <td class="px-6 py-4 whitespace-nowrap">
+            <span class={ "px-2 inline-flex text-xs leading-5 font-semibold rounded-full",
+                templ.KV("bg-green-100 text-green-800", order.Status == "Completed"),
+                templ.KV("bg-yellow-100 text-yellow-800", order.Status == "Pending"),
+                templ.KV("bg-red-100 text-red-800", order.Status == "Cancelled"),
+            }>
+                { order.Status }
+            </span>
+        </td>
+        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+            <form method="POST" action="/admin/update-status" class="inline-flex items-center space-x-2">
+                <input type="hidden" name="order_id" value={ fmt.Sprintf("%d", order.ID) } />
+                    <select 
+                        name="status" 
+                        class="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
+                    >
+                        <option value="Pending" selected?={ order.Status == "Pending" }>Pending</option>
+                        <option value="Preparing" selected?={ order.Status == "Preparing" }>Preparing</option>
+                        <option value="Out For Delivery" selected?={ order.Status == "Out For Delivery" }>Out For Delivery</option>
+                        <option value="Completed" selected?={ order.Status == "Completed" }>Completed</option>
+                        <option value="Cancelled" selected?={ order.Status == "Cancelled" }>Cancelled</option>
+                    </select>
+                    <button 
+                        type="submit" 
+                        class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                    >
+                        Update
+                    </button>
+            </form>
+        </td>
+    </tr>
+}

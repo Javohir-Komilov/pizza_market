@@ -1,0 +1,97 @@
+package templates
+
+import (
+    "pizza/db"
+    "fmt"
+    "pizza/models"
+)
+
+templ Cart(data struct {
+    CartItems  []models.CartItemInfo
+    TotalPrice float64
+    Categories []db.Category
+    User       db.User
+}) {
+    @Base("Cart") {
+        <div class="min-h-screen py-12 px-4 sm:px-6 lg:px-8 bg-gray-100">
+            <div class="max-w-7xl mx-auto">
+                if len(data.CartItems) == 0 {
+                    <h1 class="text-4xl font-extrabold text-center text-gray-900 mb-12">Your cart is empty</h1>
+                } else {
+                    <h1 class="text-4xl font-extrabold text-center text-gray-900 mb-12">Your Cart</h1>
+                    <div class="mt-6">
+                        <div class="flex justify-between items-center mb-8 bg-white p-6 rounded-xl shadow-lg">
+                            <p class="text-2xl font-bold text-gray-800">Total: <span class="text-green-600">${ fmt.Sprintf("%.2f", data.TotalPrice) }</span></p>
+                            <form action="/user/place-order" method="POST">
+                                <button type="submit" class="bg-green-600 text-white px-6 py-3 rounded-full font-semibold text-lg transition-colors duration-300 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50">
+                                    Place Order
+                                </button>
+                            </form>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                            for _, item := range data.CartItems {
+                                @CartItem(item, data.Categories, data.User)
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+}
+
+templ CartItem(item models.CartItemInfo, categories []db.Category, user db.User) {
+    <div class="bg-white rounded-xl shadow-lg overflow-hidden transition-transform duration-300 hover:scale-105 flex flex-col h-full">
+        <div class="aspect-w-16 aspect-h-9 w-full relative">
+            <img src={ item.MenuItem.ImageUrl } alt={ item.MenuItem.Name } class="object-cover w-full h-full"/>
+            <div class="absolute top-0 right-0 bg-red-600 text-white px-3 py-1 rounded-bl-lg font-bold">
+                ${ fmt.Sprintf("%.2f", item.MenuItem.Price) }
+            </div>
+        </div>
+        <div class="p-6 flex flex-col flex-grow">
+            <h2 class="text-2xl font-bold text-gray-800 mb-2">{ item.MenuItem.Name }</h2>
+            if item.MenuItem.Description.Valid {
+                <p class="text-gray-600 mb-4 flex-grow overflow-hidden">{ item.MenuItem.Description.String }</p>
+            } else {
+                <p class="text-gray-600 mb-4 flex-grow overflow-hidden">No description available</p>
+            }
+
+            <div class="mb-4">
+                for _, category := range categories {
+                    if category.ID == item.MenuItem.CategoryID.Int64 {
+                        <span class="text-sm text-gray-500">Category: </span>
+                        <a href={ templ.URL("/categories/" + fmt.Sprintf("%d", category.ID)) } class="text-sm font-medium text-blue-600 hover:text-blue-800 transition-colors duration-300">{ category.Title }</a>
+                    }
+                }
+                if item.MenuItem.CategoryID.Int64 == 0 {
+                    <span class="text-sm text-gray-500">Uncategorized</span>
+                }
+            </div>
+            
+            <div class="flex flex-col space-y-2 mt-auto">
+                <div class="flex justify-between items-center mb-4">
+                    <div class="flex items-center space-x-2">
+                        <form action="/user/cart/remove" method="POST" class="inline">
+                            <input type="hidden" name="item_id" value={ fmt.Sprint(item.MenuItem.ID) }/>
+                            <input type="hidden" name="quantity" value="1"/>
+                            <button type="submit" class="bg-gray-200 text-gray-700 px-3 py-1 rounded-full font-bold text-lg hover:bg-gray-300 transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-gray-400">-</button>
+                        </form>
+                        <span class="text-xl font-semibold">{ fmt.Sprintf("%d", item.Quantity) }</span>
+                        <form action="/user/cart/add" method="POST" class="inline">
+                            <input type="hidden" name="item_id" value={ fmt.Sprint(item.MenuItem.ID) }/>
+                            <input type="hidden" name="quantity" value="1"/>
+                            <button type="submit" class="bg-gray-200 text-gray-700 px-3 py-1 rounded-full font-bold text-lg hover:bg-gray-300 transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-gray-400">+</button>
+                        </form>
+                    </div>
+                    <span class="text-xl font-bold text-green-600">Total: ${ fmt.Sprintf("%.2f", item.Subtotal) }</span>
+                </div>
+                <form action="/user/cart/remove-all" method="POST" class="w-full">
+                    <input type="hidden" name="item_id" value={ fmt.Sprint(item.MenuItem.ID) }/>
+                    <button type="submit" class="w-full bg-red-600 text-white px-4 py-2 rounded-full font-semibold transition-colors duration-300 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-50">
+                        Remove from Cart
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+}

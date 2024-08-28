@@ -1,0 +1,54 @@
+package templates
+
+import (
+    "pizza/db"
+    "fmt"
+)
+
+templ Category(items []db.MenuItem, category db.Category) {
+    @Base(category.Title) {
+        <div class="min-h-screen py-12 px-4 sm:px-6 lg:px-8 bg-gray-100">
+            <div class="max-w-7xl mx-auto">
+                <h1 class="text-4xl font-extrabold text-center text-gray-900 mb-6">{ category.Title }</h1>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+                    for _, item := range items {
+                        if item.CategoryID.Valid && item.CategoryID.Int64 == category.ID {
+                            @MenuItemInCategory(item)
+                        }
+                    }
+                </div>
+            </div>
+        </div>
+    }
+}
+
+templ MenuItemInCategory(item db.MenuItem) {
+    <div class="bg-white rounded-xl shadow-lg overflow-hidden transition-transform duration-300 hover:scale-105 flex flex-col h-full">
+        <div class="aspect-w-16 aspect-h-9 w-full relative">
+            <img src={ item.ImageUrl } alt={ item.Name } class="object-cover w-full h-full"/>
+            <div class="absolute top-0 right-0 bg-red-600 text-white px-3 py-1 rounded-bl-lg font-bold">
+                ${ fmt.Sprintf("%.2f", item.Price) }
+            </div>
+        </div>
+        <div class="p-6 flex flex-col flex-grow">
+            <h2 class="text-2xl font-bold mb-2 text-gray-800">{ item.Name }</h2>
+            if item.Description.Valid {
+                <p class="text-gray-600 mb-4 flex-grow overflow-hidden">{ item.Description.String }</p>
+            } else {
+                <p class="text-gray-600 mb-4 flex-grow overflow-hidden">No description available</p>
+            }
+            
+            <div class="flex flex-col space-y-2 mt-auto">
+                <form action="/user/cart/add" method="POST" class="flex items-center">
+                    <input type="hidden" name="item_id" value={ fmt.Sprint(item.ID) }/>
+                    <input type="hidden" name="item_name" value={ fmt.Sprint(item.Name) }/>
+                    <input type="hidden" name="item_price" value={ fmt.Sprintf("%.02f", item.Price) }/>
+                    <input type="number" name="quantity" value="1" min="1" max="10" class="w-16 px-2 py-1 border border-gray-300 rounded-l-full text-center focus:outline-none focus:ring-2 focus:ring-red-500"/>
+                    <button type="submit" class="flex-grow bg-red-800 text-white px-4 py-2 rounded-r-full font-semibold transition-colors duration-300 hover:bg-red-900 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-50">
+                        Add to Cart
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+}
