@@ -19,3 +19,36 @@ This is a simple web application for a pizzeria built as a learning project. The
 - **Tailwind CSS**: Styling of the website is done with Tailwind CSS.
 - **SQLite3**: Database to store user data, menu items, orders, and more.
 - **sqlc**: SQL code generation tool used to interact with the SQLite3 database.
+
+## Installation
+
+1. **Clone the Repository**
+
+    ```bash
+    git clone https://github.com/Javohir-Komilov/pizza-website.git
+    cd pizza-website
+    ```
+
+2. **Install Dependencies**
+
+    Ensure you have Golang installed. Install necessary Go modules with:
+
+    ```bash
+    go mod tidy
+    ```
+
+3. **Set Up the Database**
+
+    Create and configure the SQLite3 database, and run any necessary migrations.
+
+4. **Run the Application**
+
+    Start the application with:
+
+    ```bash
+    go run main.go
+    ```
+
+5. **Open the Application**
+
+    Navigate to `http://localhost:8080` in your browser to start using the application.
